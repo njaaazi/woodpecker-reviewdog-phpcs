@@ -1,0 +1,47 @@
+name: Docker
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['8.3', '8.4', '8.5']
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          build-args: |
+            PHP_VERSION=${{ matrix.php }}
+          tags: njaaazi/woodpecker-reviewdog-phpcs:${{ matrix.php }}
+
+  latest:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Retag 8.5 as latest
+        run: |
+          docker pull njaaazi/woodpecker-reviewdog-phpcs:8.5
+          docker tag njaaazi/woodpecker-reviewdog-phpcs:8.5 njaaazi/woodpecker-reviewdog-phpcs:latest
+          docker push njaaazi/woodpecker-reviewdog-phpcs:latest
