@@ -27,5 +27,16 @@ if [ "${PLUGIN_FAIL_ON_ERROR}" = "true" ]; then
     FAIL_LEVEL_ARGS="-fail-level=any"
 fi
 
-php -d memory_limit=-1 ${PLUGIN_EXECUTABLE} --report=checkstyle --standard=${PLUGIN_STANDARD} ${PLUGIN_TARGET_DIRECTORY} -q \
-    | reviewdog -name=PHPCS -f=checkstyle -reporter=${PLUGIN_REPORTER} ${FAIL_LEVEL_ARGS} -level=${PLUGIN_LEVEL} -diff='git diff' -tee
+set +e
+php -d memory_limit=-1 -d display_errors=stderr ${PLUGIN_EXECUTABLE} --report=checkstyle --standard=${PLUGIN_STANDARD} ${PLUGIN_TARGET_DIRECTORY} -q > /tmp/lint.out
+LINT_EXIT=$?
+set -e
+
+# phpcs: 0 = clean, 1-3 = findings, anything else = crash or config error
+if [ "${LINT_EXIT}" -gt 3 ]; then
+    cat /tmp/lint.out
+    echo "phpcs failed with exit code ${LINT_EXIT}"
+    exit 1
+fi
+
+reviewdog -name=PHPCS -f=checkstyle -reporter=${PLUGIN_REPORTER} ${FAIL_LEVEL_ARGS} -level=${PLUGIN_LEVEL} -diff='git diff' -tee < /tmp/lint.out
