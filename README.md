@@ -47,6 +47,7 @@ Store `github_token` using [Woodpecker secrets](https://woodpecker-ci.org/docs/u
 | `target_directory` | `src` | Directory to scan. |
 | `executable` | `/usr/local/bin/phpcs.phar` | PHPCS executable. Override for a project-local binary. |
 | `fail_on_error` | `false` | If `true`, Reviewdog exits 1 when it finds any issue (`-fail-level=any`). |
+| `changed_only` | `false` | If `true`, lint only the PHP files the PR changed under `target_directory` (from `CI_PIPELINE_FILES`). Lints everything when that list is empty. |
 
 `github-pr-review` works with a PAT. `github-check` and `github-pr-check` use the GitHub Checks API and need an App installation token.
 
